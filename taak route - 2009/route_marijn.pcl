@@ -1,0 +1,264 @@
+#int k = clock.time ();
+#loop until clock.time() > k + 2000  begin; end;
+string begin_string = "begin_condition ";
+string begin_filler = "begin_filler ";
+string end_string = "end_condition ";
+string end_filler = "end_filler ";
+string interval_string = "interval ";
+
+#jittered inter stimulu intervals
+#nog aanpassen, dit geeft de intervallen tussen de blokken van 2 trials aan.
+# jitter rond de 4s (als de stimuli 2s duren)
+array <int> rnd_intervals[36]=
+{3000,4000,3500,4500,5000,3500,
+3000,5000,4500,4000,5000,4500,
+3000,4000,5000,4500,5000,3000,
+4000,4000,3500,4500,5000,3500,
+3000,5000,4500,4000,5000,4500,
+5000,4000,3000,4500,5000,3000
+};
+
+# jitter rond de 8s
+array <int> fil_intervals[12]=
+{6000,7000,6500,7500,9000,6500,
+8000,7500,8500,6000,7000,6000
+};
+
+# array met een code voor de conditie, nog aanvullen tot 36 en dan ook 'conditie[36]=' veranderen
+array<int> conditie[36]={
+1,
+1,
+3,
+3,
+2,
+2,
+2,
+2,
+3,
+3,
+2,
+2,
+1,
+1,
+3,
+3,
+2,
+2,
+1,
+1,
+3,
+3,
+1,
+1,
+2,
+2,
+1,
+1,
+3,
+3,
+2,
+2,
+1,
+1,
+3,
+3
+};
+
+int nr_trials=conditie.count();
+
+# Deze array wordt gebruikt om de volgorde van de trials te randomizeren
+# wordt automatisch even lang als de array van conditie
+array<int> list[nr_trials];
+list.fill( 1, nr_trials,  1,  1 ); 
+
+# deze array combineert alle geluids stimuli
+array<trial> all[4][nr_trials];
+all[1]=stimuli1;
+all[2]=stimuli12;
+all[3]=stimuli22;
+all[4]=trialcode;
+
+# deze array voegt een aantal fillers toe
+array<trial> fillers[1][12];
+fillers[1]=fillerTrials;
+
+#
+sub
+   presentScreen( string caption )
+begin
+   text1.set_caption( caption );
+   text1.redraw();  
+   trial1.present()
+end;
+
+# hier begint de intro van de taak, kan ook de uitleg worden
+#hiermee begin je de herinnering
+#introTrial.present();
+trial1.present();
+
+
+# Hiermee wordt het begin van het experiment gecodeerd en wacht je op de scanner
+triggerTrial.present();
+
+#list.shuffle();
+fillers.shuffle();
+int t = 1;
+int tr=1;
+int condition=1;
+string fi_nr = "filler ";
+string tr_nr = "trial ";
+
+# Dit is de loop van een blok van 2 trials
+loop
+	int i = 1;
+until
+	i > nr_trials+1
+begin
+		# voor filler trials, op een specifiek moment
+		if (i==7 || i==17 || i==21 || i==25 || i==31) then # dit klopt ng niet, hier moeten er 5 staan. de laatste is de laatste trial!!!1
+		response_stim.set_event_code(begin_filler + string (t));
+		responseTrial.present();
+		# hier wordt de 1e filler aangeboden
+		beepFiller.present();
+		trial1_stim.set_event_code(fi_nr + string (t));
+		presentScreen( fi_nr + string (t));
+		fillers[1][t].present();
+		trial1_stim.set_event_code("filler " + interval_string + string(fil_intervals[t]+2000));
+		presentScreen("filler " + interval_string + string(fil_intervals[t]+2000));
+		wait_interval(fil_intervals[t]+2000);
+		t = t + 1;
+				
+		response_stim.set_event_code(begin_filler + string (t));
+		responseTrial.present();
+		# hier wordt de 2e filler aangeboden
+		beepFiller.present();
+		trial1_stim.set_event_code(fi_nr + string (t));
+		presentScreen( fi_nr + string (t));
+		fillers[1][t].present();
+		trial1_stim.set_event_code("filler " + interval_string + string(fil_intervals[t]+2000));
+		presentScreen("filler " + interval_string + string(fil_intervals[t]+2000));
+		wait_interval(fil_intervals[t]+2000);
+		t = t + 1;
+
+		# voor stimulus trials
+		tr=list[i];
+		condition = conditie[tr];
+		# hiermee wordt de code van de conditie opgehaald en weggeschreven
+		response_stim.set_event_code(begin_string + string (condition));
+		responseTrial.present();
+		# hier worden de 2 trials aangeboden
+		beepTrial.present();
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_1");
+		presentScreen( tr_nr + string (tr) + "\n woord 11");
+		all[1][tr].present();
+		#pauze tussen de 2 woorden
+		wait_interval(300);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_2");
+		presentScreen( tr_nr + string (tr) + "\n woord 12");
+		all[2][tr].present();
+		#pauze tussen de 2 paren
+		wait_interval(1000);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_3");
+		presentScreen( tr_nr + string (tr) + "\n woord 21");
+		all[1][tr].present();
+		#pauze tussen de 2 woorden
+		wait_interval(300);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_4");
+		presentScreen( tr_nr + string (tr) + "\n woord 22");
+		all[3][tr].present();
+		trial1_stim.set_event_code("end_" + tr_nr + string (tr) + "_4");
+		presentScreen("end_" + tr_nr + string (tr) + "\n woord 22");
+
+		# hier wordt het einde van het blok weggeschreven met de trialcode
+		all[4][tr].present();
+		response_stim.set_event_code(end_string + string (condition));
+		responseTrial.present();
+	
+		# wacht loop voor het interval tussen de blokken
+		trial1_stim.set_event_code(interval_string + string(rnd_intervals[i]+2000));
+		presentScreen("interval " + string(rnd_intervals[i]+2000));
+		wait_interval(rnd_intervals[i]+2000);
+		i = i + 1;
+		end;
+
+		if (i==37 && t<13) then
+		response_stim.set_event_code(begin_filler + string (t));
+		responseTrial.present();
+		# hier wordt de 1e filler aangeboden
+		beepFiller.present();
+		trial1_stim.set_event_code(fi_nr + string (t));
+		presentScreen( fi_nr + string (t));
+		fillers[1][t].present();
+		trial1_stim.set_event_code("filler " + interval_string + string(fil_intervals[t]+2000));
+		presentScreen("filler " + interval_string + string(fil_intervals[t]+2000));
+		wait_interval(fil_intervals[t]+2000);
+		t = t + 1;
+
+		response_stim.set_event_code(begin_filler + string (t));
+		responseTrial.present();
+		# hier wordt de 2e filler aangeboden
+		beepFiller.present();
+		trial1_stim.set_event_code(fi_nr + string (t));
+		presentScreen( fi_nr + string (t));
+		fillers[1][t].present();
+		trial1_stim.set_event_code("filler " + interval_string + string(fil_intervals[t]+2000));
+		presentScreen("filler " + interval_string + string(fil_intervals[t]+2000));
+		wait_interval(fil_intervals[t]+2000);
+		t = t + 1;
+		break
+		end;
+		
+		if (i<nr_trials+1) then
+		# voor stimulus trials
+		tr=list[i];
+		condition = conditie[tr];
+		# hiermee wordt de code van de conditie opgehaald en weggeschreven
+		response_stim.set_event_code(begin_string + string (condition));
+		responseTrial.present();
+		# hier worden de 2 trials aangeboden
+		beepTrial.present();
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_1");
+		presentScreen( tr_nr + string (tr) + "\n woord 11");
+		all[1][tr].present();
+		#pauze tussen de 2 woorden
+		wait_interval(300);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_2");
+		presentScreen( tr_nr + string (tr) + "\n woord 12");
+		all[2][tr].present();
+		#pauze tussen de 2 paren
+		wait_interval(1000);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_3");
+		presentScreen( tr_nr + string (tr) + "\n woord 21");
+		all[1][tr].present();
+		#pauze tussen de 2 woorden
+		wait_interval(300);
+		trial1_stim.set_event_code(tr_nr + string (tr) + "_4");
+		presentScreen( tr_nr + string (tr) + "\n woord 22");
+		all[3][tr].present();
+		trial1_stim.set_event_code("end_" + tr_nr + string (tr) + "_4");
+		presentScreen("end_" + tr_nr + string (tr) + "\n woord 22");
+
+		# hier wordt het einde van het blok weggeschreven met de trialcode
+		all[4][tr].present();
+		response_stim.set_event_code(end_string + string (condition));
+		responseTrial.present();
+	
+		# wacht loop voor het interval tussen de blokken
+		trial1_stim.set_event_code(interval_string + string(rnd_intervals[i]+2000));
+		presentScreen("interval " + string(rnd_intervals[i]+2000));
+		wait_interval(rnd_intervals[i]+2000);
+		i = i + 1;
+		end;
+end;
+
+
+# hier wordt het einde van het experiment weggeschreven
+presentScreen("einde van de taak");
+response_stim.set_event_code("Survey_task_end");
+responseTrial.present();
+
+#eindeTrial.present();
+
+
+
+
